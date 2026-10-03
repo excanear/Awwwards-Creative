@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Motion Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter+Tight:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #121417;
+    --paper: #ece6da;
+    --event: #e2462f;
+    --ui: #0b0c0e;
+    --ui-2: #16181c;
+    --ui-line: #2a2d33;
+    --ui-text: #e9e6df;
+    --ui-dim: #8d9099;
+    --color-event: var(--event);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ui); color: var(--ui-text); font: 14px/1.5 "Inter Tight", system-ui, sans-serif; }
+  body { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+  @media (max-width: 900px) { body { grid-template-columns: 1fr; } }
+
+  main { padding: 16px; display: grid; align-content: start; gap: 12px; }
+  .stage {
+    position: relative; overflow: clip; width: 100%; aspect-ratio: 16 / 10; max-height: 78svh;
+    border-radius: 6px; background: var(--ink); isolation: isolate; user-select: none;
+  }
+  @media (max-width: 600px) { .stage { aspect-ratio: 4 / 5; } }
+  .section { position: absolute; inset: 0; padding: clamp(18px, 4vw, 48px); display: flex; flex-direction: column; justify-content: space-between; }
+  #a { background: var(--ink); color: var(--paper); }
+  #b { background: var(--paper); color: var(--ink); visibility: hidden; }
+  .kicker { font: 600 11px/1 "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+  h1 { position: relative; margin: 0; font: 800 clamp(48px, 11vw, 150px)/0.9 "Inter Tight", sans-serif; letter-spacing: -0.04em; }
+  h1 [data-glyph] { display: inline-block; color: var(--paper); }
+  #a-title-next { position: absolute; left: 0; top: 0; visibility: hidden; white-space: nowrap; }
+  #a-text { max-width: 34ch; font: 400 clamp(16px, 1.6vw, 21px)/1.35 "Instrument Serif", serif; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font: 600 12px/1 "JetBrains Mono", monospace; padding: 9px 12px; border: 1px solid currentColor; border-radius: 99px; }
+  #a-label { font: 600 clamp(14px, 1.8vw, 22px)/1.2 "JetBrains Mono", monospace; }
+  #b h2 { margin: 0; font: 400 clamp(56px, 10vw, 140px)/0.9 "Instrument Serif", serif; letter-spacing: -0.02em; }
+  #b .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: end; }
+  #b .art { aspect-ratio: 4 / 3; border-radius: 4px; background:
+      radial-gradient(circle at 30% 35%, var(--event) 0 18%, transparent 18.5%),
+      repeating-linear-gradient(90deg, rgba(18,20,23,.9) 0 2px, transparent 2px 14px), #d9d1c1; }
+  #b p { font: 400 clamp(15px, 1.4vw, 19px)/1.4 "Instrument Serif", serif; margin: 0; max-width: 36ch; }
+
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  input[type=range] { flex: 1; min-width: 200px; accent-color: var(--event); }
+  .p { font: 600 12px/1 "JetBrains Mono", monospace; min-width: 56px; text-align: right; color: var(--ui-dim); }
+  button, select { font: 600 13px/1 "Inter Tight", sans-serif; color: var(--ui-text); background: var(--ui-2); border: 1px solid var(--ui-line); border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+  button:hover, select:hover { border-color: var(--ui-dim); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--event); outline-offset: 2px; }
+  .hint { color: var(--ui-dim); font-size: 12px; }
+
+  aside { border-left: 1px solid var(--ui-line); padding: 16px; display: grid; align-content: start; gap: 14px; max-height: 100svh; overflow: auto; position: sticky; top: 0; }
+  @media (max-width: 900px) { aside { border-left: 0; border-top: 1px solid var(--ui-line); max-height: none; position: static; } }
+  aside h2 { margin: 0; font: 400 28px/1.1 "Instrument Serif", serif; }
+  .meta { font: 400 11px/1.6 "JetBrains Mono", monospace; color: var(--ui-dim); }
+  .card { display: grid; gap: 8px; font-size: 13px; }
+  .card b { color: var(--ui-text); }
+  .card div { color: #c7c4bc; }
+  label.toggle { display: flex; gap: 8px; align-items: center; color: var(--ui-dim); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="stage" id="stage" aria-label="Palco da transição">
+    <section class="section" id="a" aria-label="Seção A">
+      <div class="kicker" id="a-label">PARTIDA 21:40 LISBOA</div>
+      <div>
+        <h1 id="a-title"><span data-glyph>C</span><span data-other>onstruir</span><span id="a-title-next" aria-hidden="true">Inventar</span></h1>
+        <p id="a-text" data-other>Cada transição é uma frase da mesma língua: diz o que acabou, o que começa e por quê.</p>
+      </div>
+      <div class="chips" data-other>
+        <span class="chip" data-body>Spatial</span><span class="chip" data-body>Cinematic</span><span class="chip" data-body>Typographic</span>
+        <span class="chip" data-body>Liquid</span><span class="chip" data-body>Mechanical</span><span class="chip" data-body>Glitch</span>
+        <span class="chip" data-body>WebGL</span><span class="chip" data-body>Narrative</span>
+      </div>
+    </section>
+    <section class="section" id="b" aria-label="Seção B">
+      <div class="kicker">02 / Achados</div>
+      <h2>Achados</h2>
+      <div class="grid"><p>O conteúdo decide o conceito; o conceito decide o movimento; o movimento vira experiência.</p><div class="art" role="img" aria-label="Composição gráfica"></div></div>
+    </section>
+  </div>
+
+  <div class="bar">
+    <select id="pick" aria-label="Transição"></select>
+    <button id="play">Play ▶</button>
+    <button id="rev">◀ Reverse</button>
+    <input id="p" type="range" min="0" max="1" step="0.001" value="0" aria-label="Progresso" />
+    <span class="p" id="pv">0.000</span>
+  </div>
+  <div class="bar">
+    <label class="toggle"><input type="checkbox" id="reduced" /> prefers-reduced-motion</label>
+    <select id="mode" aria-label="Modo WebGL" hidden>
+      <option>dissolve</option><option>ripple</option><option>rgb</option><option>pixelate</option><option>twirl</option>
+    </select>
+    <span class="hint" id="hint">Clique no palco: a transição nasce do ponto do clique (quando suporta origem).</span>
+  </div>
+</main>
+
+<aside>
+  <div class="meta" id="meta">—</div>
+  <h2 id="name">—</h2>
+  <div class="card" id="card"><div class="hint">Sirva a pasta da skill por HTTP para ver o card da biblioteca aqui (node scripts/lab.mjs).</div></div>
+</aside>
+
+<script type="module">
+  import { play } from "../core/drive.js";
+  import * as aperture from "../transitions/aperture.js";
+  import * as clipBlades from "../transitions/clip-blades.js";
+  import * as crt from "../transitions/crt.js";
+  import * as cursorLens from "../transitions/cursor-lens.js";
+  import * as dither from "../transitions/dither.js";
+  import * as gl from "../transitions/gl-displacement.js";
+  import * as glyphDive from "../transitions/glyph-dive.js";
+  import * as goo from "../transitions/goo-rise.js";
+  import * as gravity from "../transitions/gravity-drop.js";
+  import * as ink from "../transitions/ink-bleed.js";
+  import * as fold from "../transitions/paper-fold.js";
+  import * as particles from "../transitions/particles-morph.js";
+  import * as cut from "../transitions/section-cut.js";
+  import * as flap from "../transitions/split-flap.js";
+  import * as strike from "../transitions/strike-rewrite.js";
+
+  const stage = document.getElementById("stage");
+  const pristine = stage.innerHTML;
+  const $ = (s) => stage.querySelector(s);
+  const $$ = (s) => [...stage.querySelectorAll(s)];
+  const slider = document.getElementById("p");
+  const pv = document.getElementById("pv");
+  const modeSel = document.getElementById("mode");
+  let origin = null;
+
+  /** Two posters drawn on canvases, so the WebGL demo needs no files and stays same-origin. */
+  function poster(dark) {
+    const c = document.createElement("canvas");
+    c.width = 1600;
+    c.height = 1000;
+    const x = c.getContext("2d");
+    x.fillStyle = dark ? "#121417" : "#ece6da";
+    x.fillRect(0, 0, c.width, c.height);
+    x.fillStyle = dark ? "#e2462f" : "#121417";
+    for (let i = 0; i < 18; i++) x.fillRect(80 + i * 80, dark ? 640 : 120, 6, dark ? 280 : 420 + (i % 4) * 60);
+    x.beginPath();
+    x.arc(dark ? 1180 : 420, dark ? 330 : 640, dark ? 220 : 260, 0, Math.PI * 2);
+    x.fillStyle = dark ? "#ece6da" : "#e2462f";
+    x.fill();
+    x.fillStyle = dark ? "#ece6da" : "#121417";
+    x.font = `800 230px "Inter Tight", sans-serif`;
+    x.fillText(dark ? "Construir" : "Achados", 80, dark ? 380 : 900);
+    return c;
+  }
+
+  const sections = () => ({ stage, from: $("#a"), to: $("#b") });
+
+  const DEMOS = {
+    "MK-01 Persianas": { duration: 1.1, ease: "none", build: () => clipBlades.create({ ...sections(), blades: 9, angle: 90 }) },
+    "MK-02 Lente (passe o mouse)": { duration: 0.8, ease: "none", origin: true, build: () => cursorLens.create({ ...sections(), radius: 110, origin }) },
+    "CI-07 Diafragma de Lâminas": { duration: 1.0, ease: "none", origin: true, build: () => aperture.create({ ...sections(), origin }) },
+    "TY-01 Mergulho no Glifo": {
+      duration: 2.2,
+      ease: "none",
+      build: async () => {
+        await document.fonts.ready;
+        return glyphDive.create({ ...sections(), glyph: $("[data-glyph]"), others: [...$$("[data-other]"), $("#a-label")] });
+      },
+    },
+    "TY-04 Tachado e Reescrita": {
+      duration: 1.6,
+      ease: "none",
+      build: () => strike.create({ el: $("#a-text"), next: "Every transition is a sentence in the same language: what ended, what begins, and why." }),
+    },
+    "SP-01 Corte de Seção (clique)": { duration: 1.3, ease: "none", origin: true, build: () => cut.create({ ...sections(), y: origin?.y }) },
+    "SP-08 Dobradura": { duration: 1.4, ease: "none", build: () => fold.create({ ...sections() }) },
+    "LQ-01 Mancha de Tinta (clique)": { duration: 1.4, ease: "none", origin: true, build: () => ink.create({ ...sections(), origin }) },
+    "LQ-03 Metaball (Goo)": { duration: 1.6, ease: "none", build: () => goo.create({ ...sections() }) },
+    "ME-02 Split-Flap": { duration: 1.6, ease: "none", build: () => flap.create({ el: $("#a-label"), next: "CHEGADA 06:15 SÃO PAULO" }) },
+    "ME-05 Gravidade": { duration: 2.4, ease: "none", build: () => gravity.create({ ...sections() }) },
+    "DG-08 Dithering (clique)": { duration: 1.4, ease: "none", origin: true, build: () => dither.create({ ...sections(), origin, cell: 6 }) },
+    "DG-10 Desligar o CRT": { duration: 1.2, ease: "none", build: () => crt.create({ ...sections() }) },
+    "GX-03 Partículas que Formam": {
+      duration: 2.0,
+      ease: "none",
+      build: async () => {
+        await document.fonts.ready;
+        return particles.create({ stage, fromEl: $("#a-title"), toEl: $("#a-title-next") });
+      },
+    },
+    "GL-01 WebGL (modos)": {
+      duration: 1.4,
+      ease: "power2.inOut",
+      origin: true,
+      modes: true,
+      build: async () => {
+        await document.fonts.ready;
+        const t = gl.create({ stage, from: poster(true), to: poster(false), mode: modeSel.value, origin });
+        await t.ready;
+        return t;
+      },
+    },
+  };
+
+  const pick = document.getElementById("pick");
+  for (const name of Object.keys(DEMOS)) pick.append(new Option(name, name));
+  let current = null;
+  let demo = null;
+  let token = 0;
+
+  function show(p) {
+    slider.value = String(p);
+    pv.textContent = Number(p).toFixed(3);
+  }
+
+  async function select(name) {
+    const mine = ++token;
+    current?.destroy();
+    current = null;
+    stage.innerHTML = pristine;
+    demo = DEMOS[name];
+    modeSel.hidden = !demo.modes;
+    const t = await demo.build();
+    if (mine !== token) return t.destroy();
+    current = t;
+    window.__transition = t;
+    current.render(0);
+    show(0);
+    card(name.slice(0, 5));
+  }
+
+  async function run(to) {
+    if (!current) return;
+    await play(current, { duration: demo.duration, ease: demo.ease, from: Number(slider.value), to, onUpdate: show });
+    show(to);
+  }
+
+  pick.addEventListener("change", () => select(pick.value));
+  modeSel.addEventListener("change", () => select(pick.value));
+  document.getElementById("play").addEventListener("click", () => run(1));
+  document.getElementById("rev").addEventListener("click", () => run(0));
+  slider.addEventListener("input", () => {
+    current?.render(Number(slider.value));
+    pv.textContent = Number(slider.value).toFixed(3);
+  });
+  document.getElementById("reduced").addEventListener("change", (e) => {
+    if (e.target.checked) document.documentElement.dataset.motion = "reduce";
+    else delete document.documentElement.dataset.motion;
+  });
+  stage.addEventListener("click", async (e) => {
+    if (!demo?.origin || Number(slider.value) > 0) return;
+    const r = stage.getBoundingClientRect();
+    origin = { x: e.clientX - r.left, y: e.clientY - r.top };
+    await select(pick.value);
+    run(1);
+  });
+  addEventListener("resize", () => Number(slider.value) === 0 && select(pick.value));
+
+  /** The concept card, read from the library (needs the skill folder served over HTTP). */
+  async function card(id) {
+    const files = {
+      SP: "01-spatial-architectural", CI: "02-cinematic", TY: "03-typographic-editorial", MK: "04-masking-optical",
+      LQ: "05-liquid-organic-atmospheric", ME: "06-mechanical-physical", DG: "07-distortion-glitch", IV: "08-image-video",
+      GX: "09-generative-svg-canvas", GL: "10-webgl-3d", IN: "11-interaction-driven", NX: "12-narrative-experimental",
+    };
+    try {
+      const text = await (await fetch(`../../../library/${files[id.slice(0, 2)]}.md`)).text();
+      const block = text.split(/^### /m).find((b) => b.startsWith(id));
+      if (!block) return;
+      const [head, metaLine, ...rest] = block.split(/\r?\n/);
+      document.getElementById("name").textContent = head.replace(/^.+?·\s*/, "");
+      document.getElementById("meta").textContent = `${id} · ${metaLine.replaceAll("`", "").replaceAll(" ", " · ")}`;
+      const el = document.getElementById("card");
+      el.replaceChildren();
+      for (const line of rest.filter((l) => l.startsWith("- **"))) {
+        const d = document.createElement("div");
+        d.innerHTML = line.slice(2).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>");
+        el.append(d);
+      }
+    } catch {
+      /* opened from file:// or offline: the card stays as a hint */
+    }
+  }
+
+  select(pick.value);
+</script>
+</body>
+</html>
